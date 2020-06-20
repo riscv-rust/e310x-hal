@@ -4,6 +4,7 @@
 //! family of microcontrollers.
 
 #![deny(missing_docs)]
+#![cfg_attr(feature = "async-traits", feature(generic_associated_types))]
 #![no_std]
 
 pub use e310x;
