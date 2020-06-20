@@ -358,7 +358,7 @@ mod async_impls {
     use core::future::Future;
     use core::pin::Pin;
     use core::task::{Context, Poll};
-    use async_embedded_traits::spi::AsyncTransfer;
+    use async_embedded_traits::spi::{AsyncTransfer, AsyncWrite, AsyncWriteIter};
     use super::{Spi, SpiX, qspi0::RegisterBlock};
 
     impl<SPI: SpiX, PINS> AsyncTransfer for Spi<SPI, PINS> {
@@ -368,6 +368,7 @@ mod async_impls {
         fn async_transfer<'a>(&'a mut self, data: &'a mut [u8]) -> Self::TransferFuture<'a> {
             // Ensure that RX FIFO is empty
             while self.spi.rxdata.read().empty().bit_is_clear() { }
+
             self.cs_mode_frame();
 
             AsyncTransferFuture {
@@ -406,6 +407,129 @@ mod async_impls {
                         let iread = self.iread;
                         unsafe { *self.data.get_unchecked_mut(iread) = data.data().bits() };
                         self.iread = iread + 1;
+                    } else {
+                        cx.waker().wake_by_ref();
+                        return Poll::Pending;
+                    }
+                }
+            }
+
+            // self.cs_mode_word();
+            if self.spi.csmode.read().bits() != 3 {
+                self.spi.csmode.write(|w| unsafe { w.bits(0) });
+            }
+
+            Poll::Ready(Ok(()))
+        }
+    }
+
+    impl<SPI: SpiX, PINS> AsyncWrite for Spi<SPI, PINS> {
+        type Error = Infallible;
+        type WriteFuture<'t> = AsyncWriteFuture<'t>;
+
+        #[inline(never)]
+        fn async_write<'a>(&'a mut self, data: &'a [u8]) -> Self::WriteFuture<'a> {
+            // Ensure that RX FIFO is empty
+            while self.spi.rxdata.read().empty().bit_is_clear() { }
+
+            self.cs_mode_frame();
+
+            AsyncWriteFuture {
+                spi: &self.spi,
+                data,
+                iwrite: 0,
+                iread: 0,
+            }
+        }
+    }
+
+    pub struct AsyncWriteFuture<'a> {
+        spi: &'a RegisterBlock,
+        data: &'a [u8],
+        iwrite: usize,
+        iread: usize,
+    }
+
+    impl<'a> Future for AsyncWriteFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        //#[inline(never)]
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let data_len = self.data.len();
+
+            while self.iwrite < data_len || self.iread < data_len {
+                if self.iwrite < data_len && self.spi.txdata.read().full().bit_is_clear() {
+                    let iwrite = self.iwrite;
+                    let byte = unsafe { *self.data.get_unchecked(iwrite) };
+                    self.iwrite = iwrite + 1;
+                    self.spi.txdata.write(|w| unsafe { w.data().bits(byte) });
+                }
+
+                if self.iread < self.iwrite {
+                    // Read and discard byte, if any
+                    if self.spi.rxdata.read().empty().bit_is_clear() {
+                        self.iread += 1;
+                    } else {
+                        cx.waker().wake_by_ref();
+                        return Poll::Pending;
+                    }
+                }
+            }
+
+            // self.cs_mode_word();
+            if self.spi.csmode.read().bits() != 3 {
+                self.spi.csmode.write(|w| unsafe { w.bits(0) });
+            }
+
+            Poll::Ready(Ok(()))
+        }
+    }
+
+    impl<SPI: SpiX, PINS> AsyncWriteIter for Spi<SPI, PINS> {
+        type Error = Infallible;
+        type WriteIterFuture<'t> = AsyncWriteIterFuture<'t>;
+
+        #[inline(never)]
+        fn async_write_iter<'a>(&'a mut self, iter: &'a mut dyn Iterator<Item=u8>) -> Self::WriteIterFuture<'a> {
+            // Ensure that RX FIFO is empty
+            while self.spi.rxdata.read().empty().bit_is_clear() { }
+
+            self.cs_mode_frame();
+
+            AsyncWriteIterFuture {
+                spi: &self.spi,
+                iter,
+                has_data: true,
+                read_count: 0,
+            }
+        }
+    }
+
+    pub struct AsyncWriteIterFuture<'a> {
+        spi: &'a RegisterBlock,
+        iter: &'a mut dyn Iterator<Item=u8>,
+        has_data: bool,
+        read_count: u8,
+    }
+
+    impl<'a> Future for AsyncWriteIterFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            while self.has_data || self.read_count > 0 {
+                if self.has_data && self.spi.txdata.read().full().bit_is_clear() {
+                    if let Some(byte) = self.iter.next() {
+                        self.spi.txdata.write(|w| unsafe { w.data().bits(byte) });
+                        self.read_count += 1;
+                    } else {
+                        self.has_data = false;
+                    }
+                }
+
+                if self.read_count > 0 {
+                    // Read and discard byte, if any
+                    if self.spi.rxdata.read().empty().bit_is_clear() {
+                        self.read_count -= 1;
                     } else {
                         cx.waker().wake_by_ref();
                         return Poll::Pending;
