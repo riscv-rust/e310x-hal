@@ -151,8 +151,8 @@ impl<SPI: SpiX, PINS> Spi<SPI, PINS> {
         spi.txmark.write(|w| unsafe { w.value().bits(1) });
         spi.rxmark.write(|w| unsafe { w.value().bits(0) });
 
-        spi.delay0.reset();
-        spi.delay1.reset();
+        spi.delay0.write(|w| unsafe { w.cssck().bits(1).sckcs().bits(1) });
+        spi.delay1.write(|w| unsafe { w.intercs().bits(1).interxfr().bits(0) });
 
         Self { spi, pins }
     }
@@ -255,6 +255,7 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Transfer<u8> for Spi<SPI, PIN
         while self.spi.rxdata.read().empty().bit_is_clear() { }
 
         self.cs_mode_frame();
+        for _ in 0..20 { self.spi.rxdata.read(); }
 
         let mut iwrite = 0;
         let mut iread = 0;
@@ -288,25 +289,16 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS> 
         while self.spi.rxdata.read().empty().bit_is_clear() { }
 
         self.cs_mode_frame();
-
-        let mut iwrite = 0;
-        let mut iread = 0;
-        while iwrite < words.len() || iread < words.len() {
-            if iwrite < words.len() && self.spi.txdata.read().full().bit_is_clear() {
-                let byte = unsafe { words.get_unchecked(iwrite) };
-                iwrite += 1;
-                self.spi.txdata.write(|w| unsafe { w.data().bits(*byte) });
+        let mut i = 0;
+        for byte in words {
+            self.spi.txdata.write(|w| unsafe { w.data().bits(*byte) });
+            i += 1;
+            if i == words.len() {
+                self.cs_mode_word();
             }
-
-            if iread < iwrite {
-                // Read and discard byte, if any
-                if self.spi.rxdata.read().empty().bit_is_clear() {
-                    iread += 1;
-                }
-            }
+            while self.spi.rxdata.read().empty().bit_is_set() {}
         }
-
-        self.cs_mode_word();
+        //self.cs_mode_word();
 
         Ok(())
     }
@@ -325,6 +317,7 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PI
         while self.spi.rxdata.read().empty().bit_is_clear() { }
 
         self.cs_mode_frame();
+        for _ in 0..20 { self.spi.rxdata.read(); }
 
         let mut read_count = 0;
         let mut has_data = true;
