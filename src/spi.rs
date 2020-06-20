@@ -352,6 +352,76 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PI
     }
 }
 
+#[cfg(feature = "async-traits")]
+mod async_impls {
+    use core::convert::Infallible;
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::task::{Context, Poll};
+    use async_embedded_traits::spi::AsyncTransfer;
+    use super::{Spi, SpiX, qspi0::RegisterBlock};
+
+    impl<SPI: SpiX, PINS> AsyncTransfer for Spi<SPI, PINS> {
+        type Error = Infallible;
+        type TransferFuture<'t> = AsyncTransferFuture<'t>;
+
+        fn async_transfer<'a>(&'a mut self, data: &'a mut [u8]) -> Self::TransferFuture<'a> {
+            // Ensure that RX FIFO is empty
+            while self.spi.rxdata.read().empty().bit_is_clear() { }
+            self.cs_mode_frame();
+
+            AsyncTransferFuture {
+                spi: &self.spi,
+                data,
+                iwrite: 0,
+                iread: 0,
+            }
+        }
+    }
+
+    pub struct AsyncTransferFuture<'a> {
+        spi: &'a RegisterBlock,
+        data: &'a mut [u8],
+        iwrite: usize,
+        iread: usize,
+    }
+
+    impl<'a> Future for AsyncTransferFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let data_len = self.data.len();
+
+            while self.iwrite < data_len || self.iread < data_len {
+                if self.iwrite < data_len && self.spi.txdata.read().full().bit_is_clear() {
+                    let iwrite = self.iwrite;
+                    let byte = unsafe { *self.data.get_unchecked(iwrite) };
+                    self.iwrite = iwrite + 1;
+                    self.spi.txdata.write(|w| unsafe { w.data().bits(byte) });
+                }
+
+                if self.iread < self.iwrite {
+                    let data = self.spi.rxdata.read();
+                    if data.empty().bit_is_clear() {
+                        let iread = self.iread;
+                        unsafe { *self.data.get_unchecked_mut(iread) = data.data().bits() };
+                        self.iread = iread + 1;
+                    } else {
+                        cx.waker().wake_by_ref();
+                        return Poll::Pending;
+                    }
+                }
+            }
+
+            // self.cs_mode_word();
+            if self.spi.csmode.read().bits() != 3 {
+                self.spi.csmode.write(|w| unsafe { w.bits(0) });
+            }
+
+            Poll::Ready(Ok(()))
+        }
+    }
+}
 
 // Backward compatibility
 impl<PINS> Spi<QSPI0, PINS> {
