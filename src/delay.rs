@@ -98,3 +98,46 @@ impl DelayMs<u8> for Sleep {
         self.delay_ms(u32::from(ms));
     }
 }
+
+#[cfg(feature = "async-traits")]
+mod async_impls {
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::task::{Context, Poll};
+    use async_embedded_traits::delay::AsyncDelayMs;
+    use async_embedded_traits::impl_delay_ms_for_ms_u32;
+    use super::{Delay, MTIME};
+
+    impl AsyncDelayMs<u32> for Delay {
+        type DelayFuture<'f> = MtimeDelayFuture;
+
+        fn async_delay_ms(&mut self, ms: u32) -> Self::DelayFuture<'_> {
+            let ticks = (ms as u64) * 32768 / 1000;
+            let mtime = MTIME;
+            let deadline = mtime.mtime().wrapping_add(ticks);
+            MtimeDelayFuture {
+                deadline,
+            }
+        }
+    }
+
+    impl_delay_ms_for_ms_u32!(Delay);
+
+    pub struct MtimeDelayFuture {
+        deadline: u64,
+    }
+
+    impl Future for MtimeDelayFuture {
+        type Output = ();
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+            let mtime = MTIME;
+            if mtime.mtime() < self.deadline {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            } else {
+                Poll::Ready(())
+            }
+        }
+    }
+}

@@ -6,6 +6,9 @@
 #![deny(missing_docs)]
 #![no_std]
 
+#![allow(incomplete_features)]
+#![cfg_attr(feature = "async-traits", feature(generic_associated_types))]
+
 pub use e310x;
 
 pub mod core;

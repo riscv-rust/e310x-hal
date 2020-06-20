@@ -7,6 +7,8 @@ pub use embedded_hal::digital::v2::{
     StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin,
     ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin,
 };
+#[cfg(feature = "async-traits")]
+pub use async_embedded_traits::prelude::*;
 pub use crate::clock::PrciExt as _e310x_hal_clock_PrciExt;
 pub use crate::clock::AonExt as _e310x_hal_clock_AonExt;
 pub use crate::gpio::GpioExt as _e310x_hal_gpio_GpioExt;
