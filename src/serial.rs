@@ -155,6 +155,224 @@ impl<UART: UartX> serial::Write<u8> for Tx<UART> {
     }
 }
 
+#[cfg(feature = "async-traits")]
+mod async_impls {
+    use core::convert::Infallible;
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::task::{Context, Poll};
+    use async_embedded_traits::serial::{AsyncRead, AsyncWrite};
+    use super::{UartX, Serial, Rx, Tx, uart0::RegisterBlock};
+
+    impl<UART: UartX + 'static, PINS> AsyncRead for Serial<UART, PINS> {
+        type Error = Infallible;
+        type ReadByteFuture<'f> = AsyncReadByteFuture<'f>;
+        type ReadFuture<'f> = AsyncReadFuture<'f>;
+
+        fn async_read_byte(&mut self) -> Self::ReadByteFuture<'_> {
+            AsyncReadByteFuture {
+                uart: &self.uart,
+            }
+        }
+
+        fn async_read<'a>(&'a mut self, data: &'a mut [u8]) -> Self::ReadFuture<'_> {
+            AsyncReadFuture {
+                uart: &self.uart,
+                data,
+                offset: 0
+            }
+        }
+    }
+
+    impl<UART: UartX + 'static> AsyncRead for Rx<UART> {
+        type Error = Infallible;
+        type ReadByteFuture<'f> = AsyncReadByteFuture<'f>;
+        type ReadFuture<'f> = AsyncReadFuture<'f>;
+
+        fn async_read_byte(&mut self) -> Self::ReadByteFuture<'_> {
+            AsyncReadByteFuture {
+                uart: &self.uart,
+            }
+        }
+
+        fn async_read<'a>(&'a mut self, data: &'a mut [u8]) -> Self::ReadFuture<'_> {
+            AsyncReadFuture {
+                uart: &self.uart,
+                data,
+                offset: 0
+            }
+        }
+    }
+
+    pub struct AsyncReadByteFuture<'a> {
+        uart: &'a RegisterBlock,
+    }
+
+    impl<'a> Future for AsyncReadByteFuture<'a> {
+        type Output = Result<u8, Infallible>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let rxdata = self.uart.rxdata.read();
+
+            if rxdata.empty().bit_is_set() {
+                // TODO: replace with something useful
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            } else {
+                let byte = rxdata.data().bits() as u8;
+                Poll::Ready(Ok(byte))
+            }
+        }
+    }
+
+    pub struct AsyncReadFuture<'a> {
+        uart: &'a RegisterBlock,
+        data: &'a mut [u8],
+        offset: usize,
+    }
+
+    impl<'a> Future for AsyncReadFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            while self.offset < self.data.len() {
+                let rxdata = self.uart.rxdata.read();
+
+                if rxdata.empty().bit_is_set() {
+                    // TODO: replace with something useful
+                    cx.waker().wake_by_ref();
+                    return Poll::Pending
+                } else {
+                    let byte = rxdata.data().bits() as u8;
+                    let offset = self.offset; // Stupid Rust
+                    self.data[offset] = byte;
+                    self.offset += 1;
+                }
+            }
+            Poll::Ready(Ok(()))
+        }
+    }
+
+    impl<UART: UartX + 'static, PINS> AsyncWrite for Serial<UART, PINS> {
+        type Error = Infallible;
+        type WriteByteFuture<'t> = AsyncWriteByteFuture<'t>;
+        type WriteFuture<'t> = AsyncWriteFuture<'t>;
+        type FlushFuture<'t> = AsyncFlushFuture<'t>;
+
+        fn async_write_byte(&mut self, byte: u8) -> Self::WriteByteFuture<'_> {
+            AsyncWriteByteFuture {
+                uart: &self.uart,
+                byte
+            }
+        }
+
+        fn async_write<'a>(&'a mut self, data: &'a [u8]) -> AsyncWriteFuture<'a> {
+            AsyncWriteFuture {
+                uart: &self.uart,
+                data,
+            }
+        }
+
+        fn async_flush(&mut self) -> AsyncFlushFuture<'_> {
+            AsyncFlushFuture {
+                uart: &self.uart,
+            }
+        }
+    }
+
+    impl<UART: UartX + 'static> AsyncWrite for Tx<UART> {
+        type Error = Infallible;
+        type WriteByteFuture<'t> = AsyncWriteByteFuture<'t>;
+        type WriteFuture<'t> = AsyncWriteFuture<'t>;
+        type FlushFuture<'t> = AsyncFlushFuture<'t>;
+
+        fn async_write_byte(&mut self, byte: u8) -> Self::WriteByteFuture<'_> {
+            AsyncWriteByteFuture {
+                uart: &self.uart,
+                byte
+            }
+        }
+
+        fn async_write<'a>(&'a mut self, data: &'a [u8]) -> AsyncWriteFuture<'a> {
+            AsyncWriteFuture {
+                uart: &self.uart,
+                data,
+            }
+        }
+
+        fn async_flush(&mut self) -> AsyncFlushFuture<'_> {
+            AsyncFlushFuture {
+                uart: &self.uart,
+            }
+        }
+    }
+
+    pub struct AsyncWriteByteFuture<'a> {
+        uart: &'a RegisterBlock,
+        byte: u8,
+    }
+
+    impl<'a> Future for AsyncWriteByteFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let txdata = self.uart.txdata.read();
+
+            if txdata.full().bit_is_set() {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            } else {
+                unsafe {
+                    self.uart.txdata.write(|w| w.data().bits(self.byte));
+                }
+                Poll::Ready(Ok(()))
+            }
+        }
+    }
+
+    pub struct AsyncWriteFuture<'a> {
+        uart: &'a RegisterBlock,
+        data: &'a [u8],
+    }
+
+    impl<'a> Future for AsyncWriteFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            while let Some(byte) = self.data.first() {
+                let txdata = self.uart.txdata.read();
+
+                if txdata.full().bit_is_set() {
+                    cx.waker().wake_by_ref();
+                    return Poll::Pending;
+                } else {
+                    self.uart.txdata.write(|w| unsafe { w.data().bits(*byte) });
+                    self.data = &self.data[1..];
+                }
+            }
+            Poll::Ready(Ok(()))
+        }
+    }
+
+    pub struct AsyncFlushFuture<'a> {
+        uart: &'a RegisterBlock,
+    }
+
+    impl<'a> Future for AsyncFlushFuture<'a> {
+        type Output = Result<(), Infallible>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            if self.uart.ip.read().txwm().bit_is_set() {
+                // FIFO count is below the receive watermark (1)
+                Poll::Ready(Ok(()))
+            } else {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
+        }
+    }
+}
+
 // Backward compatibility
 impl<TX, RX> Serial<UART0, (TX, RX)> {
     /// Configures a UART peripheral to provide serial communication
