@@ -226,7 +226,7 @@ impl<SPI: SpiX, PINS> Spi<SPI, PINS> {
 impl<SPI: SpiX, PINS> embedded_hal::spi::FullDuplex<u8> for Spi<SPI, PINS> {
     type Error = Infallible;
 
-    fn read(&mut self) -> nb::Result<u8, Infallible> {
+    fn try_read(&mut self) -> nb::Result<u8, Infallible> {
         let rxdata = self.spi.rxdata.read();
 
         if rxdata.empty().bit_is_set() {
@@ -236,7 +236,7 @@ impl<SPI: SpiX, PINS> embedded_hal::spi::FullDuplex<u8> for Spi<SPI, PINS> {
         }
     }
 
-    fn send(&mut self, byte: u8) -> nb::Result<(), Infallible> {
+    fn try_send(&mut self, byte: u8) -> nb::Result<(), Infallible> {
         let txdata = self.spi.txdata.read();
 
         if txdata.full().bit_is_set() {
@@ -251,7 +251,7 @@ impl<SPI: SpiX, PINS> embedded_hal::spi::FullDuplex<u8> for Spi<SPI, PINS> {
 impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Transfer<u8> for Spi<SPI, PINS> {
     type Error = Infallible;
 
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w[u8], Self::Error> {
+    fn try_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w[u8], Self::Error> {
         // Ensure that RX FIFO is empty
         while self.spi.rxdata.read().empty().bit_is_clear() { }
 
@@ -284,7 +284,7 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Transfer<u8> for Spi<SPI, PIN
 impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS> {
     type Error = Infallible;
 
-    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+    fn try_write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
         // Ensure that RX FIFO is empty
         while self.spi.rxdata.read().empty().bit_is_clear() { }
 
@@ -316,7 +316,7 @@ impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS> 
 impl<SPI: SpiX, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS> {
     type Error = Infallible;
 
-    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+    fn try_write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
     where
         WI: IntoIterator<Item=u8>
     {
