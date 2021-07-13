@@ -12,6 +12,7 @@ pub mod core;
 pub mod clock;
 pub mod delay;
 pub mod gpio;
+pub mod pwm;
 pub mod device;
 pub mod prelude;
 pub mod rtc;
