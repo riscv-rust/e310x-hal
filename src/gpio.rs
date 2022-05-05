@@ -95,6 +95,11 @@ trait PeripheralAccess {
         atomic_set_bit(r, index, bit);
     }
 
+    fn output_value(index: usize) -> bool {
+        let p = Self::peripheral();
+        (p.output_val.read().bits() >> (index & 31) & 1) != 0
+    }
+
     fn toggle_pin(index: usize) {
         let p = Self::peripheral();
         let r: &AtomicU32 = unsafe { core::mem::transmute(&p.output_val) };
@@ -290,7 +295,7 @@ macro_rules! gpio {
 
                 impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
                     fn is_set_high(&self) -> Result<bool, Infallible> {
-                        Ok($GPIOX::input_value(Self::INDEX))
+                        Ok($GPIOX::output_value(Self::INDEX))
                     }
 
                     fn is_set_low(&self) -> Result<bool, Infallible> {
