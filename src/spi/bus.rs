@@ -131,7 +131,8 @@ where
         // Ensure that RX FIFO is empty
         self.wait_for_rxfifo();
 
-        while iwrite < write.len() || iread < read.len() {
+        // go through entire write buffer and read back (even if read buffer is empty)
+        while iwrite < write.len() || iread < write.len() {
             if iwrite < write.len() && self.spi.txdata.read().full().bit_is_clear() {
                 let byte = write.get(iwrite).unwrap_or(&0);
                 iwrite += 1;
