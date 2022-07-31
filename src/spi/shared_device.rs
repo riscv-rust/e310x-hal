@@ -1,11 +1,9 @@
-use embedded_hal::spi::{
-    blocking::{Operation, Transactional, Transfer, TransferInplace, Write, WriteIter},
-    nb::FullDuplex,
-    ErrorKind, ErrorType,
-};
+use core::ops::DerefMut;
+
+use embedded_hal::spi::{blocking::SpiDevice, ErrorKind, ErrorType};
 use riscv::interrupt;
 
-use super::{PinCS, Pins, PinsNoCS, SharedBus, SpiConfig, SpiX};
+use super::{PinCS, PinsNoCS, SharedBus, SpiBus, SpiConfig, SpiX};
 
 /// SPI shared device abstraction
 pub struct SpiSharedDevice<'bus, SPI, PINS, CS> {
@@ -43,137 +41,33 @@ impl<SPI, PINS, CS> ErrorType for SpiSharedDevice<'_, SPI, PINS, CS> {
     type Error = ErrorKind;
 }
 
-impl<SPI, PINS, CS> FullDuplex for SpiSharedDevice<'_, SPI, PINS, CS>
+impl<SPI, PINS, CS> SpiDevice for SpiSharedDevice<'_, SPI, PINS, CS>
 where
     SPI: SpiX,
-    PINS: Pins<SPI>,
+    PINS: PinsNoCS<SPI>,
     CS: PinCS<SPI>,
 {
-    fn read(&mut self) -> nb::Result<u8, Self::Error> {
-        interrupt::free(|cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
+    type Bus = SpiBus<SPI, PINS>;
+    // type Bus = RefMut<'bus, SpiBus<SPI, PINS>>;
 
-            bus.configure(&self.config, Some(CS::CS_INDEX));
+    fn transaction<R>(
+        &mut self,
+        f: impl FnOnce(&mut Self::Bus) -> Result<R, <Self::Bus as ErrorType>::Error>,
+    ) -> Result<R, Self::Error> {
+        let mut result = Err(ErrorKind::Other);
 
-            bus.read()
-        })
-    }
-
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        interrupt::free(|cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
-
-            bus.configure(&self.config, Some(CS::CS_INDEX));
-
-            bus.send(byte)
-        })
-    }
-}
-
-impl<SPI, PINS, CS> Transfer for SpiSharedDevice<'_, SPI, PINS, CS>
-where
-    SPI: SpiX,
-    PINS: Pins<SPI>,
-    CS: PinCS<SPI>,
-{
-    fn transfer(&mut self, read: &mut [u8], write: &[u8]) -> Result<(), Self::Error> {
-        interrupt::free(move |cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
-
-            bus.configure(&self.config, Some(CS::CS_INDEX));
-
-            bus.start_frame();
-            let result = bus.transfer(read, write);
-            bus.end_frame();
-
-            result
-        })
-    }
-}
-
-impl<SPI, PINS, CS> TransferInplace for SpiSharedDevice<'_, SPI, PINS, CS>
-where
-    SPI: SpiX,
-    PINS: Pins<SPI>,
-    CS: PinCS<SPI>,
-{
-    fn transfer_inplace<'w>(&mut self, words: &'w mut [u8]) -> Result<(), Self::Error> {
-        interrupt::free(move |cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
-
-            bus.configure(&self.config, Some(CS::CS_INDEX));
-
-            bus.start_frame();
-            let result = bus.transfer_inplace(words);
-            bus.end_frame();
-
-            result
-        })
-    }
-}
-
-impl<SPI, PINS, CS> Write for SpiSharedDevice<'_, SPI, PINS, CS>
-where
-    SPI: SpiX,
-    PINS: Pins<SPI>,
-    CS: PinCS<SPI>,
-{
-    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
         interrupt::free(|cs| {
             let mut bus = self.bus.borrow(*cs).borrow_mut();
 
             bus.configure(&self.config, Some(CS::CS_INDEX));
 
             bus.start_frame();
-            let result = bus.transfer(&mut [], words);
+            result = f(bus.deref_mut());
             bus.end_frame();
 
-            result
-        })
-    }
-}
+            0
+        });
 
-impl<SPI, PINS, CS> WriteIter for SpiSharedDevice<'_, SPI, PINS, CS>
-where
-    SPI: SpiX,
-    PINS: Pins<SPI>,
-    CS: PinCS<SPI>,
-{
-    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
-    where
-        WI: IntoIterator<Item = u8>,
-    {
-        interrupt::free(|cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
-
-            bus.configure(&self.config, Some(CS::CS_INDEX));
-
-            bus.start_frame();
-            let result = bus.write_iter(words);
-            bus.end_frame();
-
-            result
-        })
-    }
-}
-
-impl<SPI, PINS, CS> Transactional for SpiSharedDevice<'_, SPI, PINS, CS>
-where
-    SPI: SpiX,
-    PINS: Pins<SPI>,
-    CS: PinCS<SPI>,
-{
-    fn exec<'op>(&mut self, operations: &mut [Operation<'op, u8>]) -> Result<(), Self::Error> {
-        interrupt::free(|cs| {
-            let mut bus = self.bus.borrow(*cs).borrow_mut();
-
-            bus.configure(&self.config, Some(CS::CS_INDEX));
-
-            bus.start_frame();
-            let result = bus.exec(operations);
-            bus.end_frame();
-
-            result
-        })
+        result
     }
 }

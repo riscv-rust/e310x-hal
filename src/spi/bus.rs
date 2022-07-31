@@ -1,9 +1,7 @@
-use embedded_hal::spi::blocking::Operation;
-pub use embedded_hal::spi::blocking::{Read, Transfer, TransferInplace, Write, WriteIter};
-pub use embedded_hal::spi::nb::FullDuplex;
+use embedded_hal::spi::blocking::{SpiBus as SpiBusTransfer, SpiBusFlush};
+use embedded_hal::spi::blocking::{SpiBusRead, SpiBusWrite};
+use embedded_hal::spi::ErrorType;
 pub use embedded_hal::spi::{ErrorKind, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
-
-use nb;
 
 use super::{Pins, PinsNoCS, SharedBus, SpiConfig, SpiExclusiveDevice, SpiX};
 
@@ -101,38 +99,18 @@ where
         }
     }
 
-    // ex-traits now only accessible via devices
-
-    pub(crate) fn read(&mut self) -> nb::Result<u8, ErrorKind> {
-        let rxdata = self.spi.rxdata.read();
-
-        if rxdata.empty().bit_is_set() {
-            Err(nb::Error::WouldBlock)
-        } else {
-            Ok(rxdata.data().bits())
-        }
-    }
-
-    pub(crate) fn send(&mut self, byte: u8) -> nb::Result<(), ErrorKind> {
-        let txdata = self.spi.txdata.read();
-
-        if txdata.full().bit_is_set() {
-            Err(nb::Error::WouldBlock)
-        } else {
-            self.spi.txdata.write(|w| unsafe { w.data().bits(byte) });
-            Ok(())
-        }
-    }
-
-    pub(crate) fn transfer(&mut self, read: &mut [u8], write: &[u8]) -> Result<(), ErrorKind> {
+    /// Transfer implementation out of trait for reuse in Read and Write
+    fn perform_transfer(&mut self, read: &mut [u8], write: &[u8]) -> Result<(), ErrorKind> {
         let mut iwrite = 0;
         let mut iread = 0;
+        let bytes = core::cmp::max(read.len(), write.len());
 
         // Ensure that RX FIFO is empty
         self.wait_for_rxfifo();
 
         // go through entire write buffer and read back (even if read buffer is empty)
-        while iwrite < write.len() || iread < write.len() {
+        // while iwrite < write.len() || iread < write.len() {
+        while iwrite < bytes || iread < bytes {
             if iwrite < write.len() && self.spi.txdata.read().full().bit_is_clear() {
                 let byte = write.get(iwrite).unwrap_or(&0);
                 iwrite += 1;
@@ -152,8 +130,49 @@ where
 
         Ok(())
     }
+}
 
-    pub(crate) fn transfer_inplace(&mut self, words: &mut [u8]) -> Result<(), ErrorKind> {
+impl<SPI, PINS> ErrorType for SpiBus<SPI, PINS> {
+    type Error = ErrorKind;
+}
+
+impl<SPI, PINS> SpiBusFlush for SpiBus<SPI, PINS>
+where
+    SPI: SpiX,
+{
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        // unnecessary
+
+        Ok(())
+    }
+}
+impl<SPI, PINS> SpiBusRead for SpiBus<SPI, PINS>
+where
+    SPI: SpiX,
+{
+    fn read(&mut self, words: &mut [u8]) -> Result<(), ErrorKind> {
+        self.perform_transfer(words, &[])
+    }
+}
+
+impl<SPI, PINS> SpiBusWrite for SpiBus<SPI, PINS>
+where
+    SPI: SpiX,
+{
+    fn write(&mut self, words: &[u8]) -> Result<(), ErrorKind> {
+        self.perform_transfer(&mut [], words)
+    }
+}
+
+impl<SPI, PINS> SpiBusTransfer for SpiBus<SPI, PINS>
+where
+    SPI: SpiX,
+{
+    fn transfer(&mut self, read: &mut [u8], write: &[u8]) -> Result<(), ErrorKind> {
+        self.perform_transfer(read, write)
+    }
+
+    fn transfer_in_place(&mut self, words: &mut [u8]) -> Result<(), ErrorKind> {
         let mut iwrite = 0;
         let mut iread = 0;
 
@@ -172,63 +191,6 @@ where
                 if data.empty().bit_is_clear() {
                     unsafe { *words.get_unchecked_mut(iread) = data.data().bits() };
                     iread += 1;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    pub(crate) fn write_iter<WI>(&mut self, words: WI) -> Result<(), ErrorKind>
-    where
-        WI: IntoIterator<Item = u8>,
-    {
-        let mut iter = words.into_iter();
-
-        let mut read_count = 0;
-        let mut has_data = true;
-
-        // Ensure that RX FIFO is empty
-        self.wait_for_rxfifo();
-
-        while has_data || read_count > 0 {
-            if has_data && self.spi.txdata.read().full().bit_is_clear() {
-                if let Some(byte) = iter.next() {
-                    self.spi.txdata.write(|w| unsafe { w.data().bits(byte) });
-                    read_count += 1;
-                } else {
-                    has_data = false;
-                }
-            }
-
-            if read_count > 0 {
-                // Read and discard byte, if any
-                if self.spi.rxdata.read().empty().bit_is_clear() {
-                    read_count -= 1;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    pub(crate) fn exec<'op>(
-        &mut self,
-        operations: &mut [Operation<'op, u8>],
-    ) -> Result<(), ErrorKind> {
-        for op in operations {
-            match op {
-                Operation::Read(words) => {
-                    self.transfer(words, &[])?;
-                }
-                Operation::Write(words) => {
-                    self.transfer(&mut [], words)?;
-                }
-                Operation::Transfer(read_words, write_words) => {
-                    self.transfer(read_words, write_words)?;
-                }
-                Operation::TransferInplace(words) => {
-                    self.transfer_inplace(words)?;
                 }
             }
         }

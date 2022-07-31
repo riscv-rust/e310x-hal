@@ -1,5 +1,6 @@
 use core::cell::RefCell;
 use core::ops::Deref;
+use embedded_hal::spi::{ErrorKind, ErrorType};
 pub use embedded_hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 use riscv::interrupt;
 use riscv::interrupt::Mutex;
@@ -9,6 +10,10 @@ use super::{PinCS, PinsNoCS, SpiBus, SpiConfig, SpiSharedDevice, SpiX};
 /// Newtype for RefCell<Spi> locked behind a Mutex.
 /// Used to hold the [SpiBus] instance so it can be used for multiple [SpiSharedDevice] instances.
 pub struct SharedBus<SPI, PINS>(Mutex<RefCell<SpiBus<SPI, PINS>>>);
+
+impl<SPI, PINS> ErrorType for SharedBus<SPI, PINS> {
+    type Error = ErrorKind;
+}
 
 impl<SPI, PINS> SharedBus<SPI, PINS>
 where
