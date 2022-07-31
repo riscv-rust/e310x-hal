@@ -141,7 +141,7 @@ where
     SPI: SpiX,
 {
     fn flush(&mut self) -> Result<(), Self::Error> {
-        // unnecessary
+        // unnecessary as all Bus operations always wait for reads to finish
 
         Ok(())
     }
