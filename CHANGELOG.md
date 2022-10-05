@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Updated to support `embedded-hal` version `1.0.0-alpha.7`
+
 - Refactored `e310x-hal::spi` module, splitting the abstraction into `SpiBus` and `SpiExclusiveDevice/SpiSharedDevice` to allow multiple devices on a single SPI bus to co-exist
 - Added Pulse Width Modulation interface implementing `embedded_hal::Pwm`
 
