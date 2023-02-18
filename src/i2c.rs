@@ -121,7 +121,7 @@ impl<I2C: Deref<Target = i2c0::RegisterBlock>, PINS> I2c<I2C, PINS> {
     }
 
     fn read_sr(&self) -> i2c0::sr::R {
-        unsafe { mem::transmute(self.i2c.sr().read()) }
+        self.i2c.sr().read()
     }
 
     fn write_byte(&self, byte: u8) {

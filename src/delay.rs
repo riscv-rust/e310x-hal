@@ -17,6 +17,12 @@ impl Delay {
     }
 }
 
+impl Default for Delay {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DelayUs<u32> for Delay {
     fn delay_us(&mut self, us: u32) {
         let ticks = (us as u64) * TICKS_PER_SECOND / 1_000_000;

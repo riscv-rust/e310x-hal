@@ -266,8 +266,8 @@ impl PMUExt for PMU {
         let ptr_u32 = ptr as *const u32;
         let sliced = core::slice::from_raw_parts(ptr_u32, reg_count);
 
-        for i in 0..sliced.len() {
-            (*backup).backup[i].write(|w| w.bits(sliced[i]));
+        for (i, &item) in sliced.iter().enumerate() {
+            (*backup).backup[i].write(|w| w.bits(item));
         }
 
         Ok(())
@@ -294,8 +294,8 @@ impl PMUExt for PMU {
         let ptr_u32 = ptr as *mut u32;
         let sliced = core::slice::from_raw_parts_mut(ptr_u32, reg_count);
 
-        for i in 0..sliced.len() {
-            sliced[i] = (*backup).backup[i].read().bits();
+        for (i, item) in sliced.iter_mut().enumerate() {
+            *item = (*backup).backup[i].read().bits();
         }
 
         Ok(())

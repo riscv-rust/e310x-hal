@@ -123,7 +123,7 @@ impl<UART: UartX> serial::Read<u8> for Rx<UART> {
         if rxdata.empty().bit_is_set() {
             Err(::nb::Error::WouldBlock)
         } else {
-            Ok(rxdata.data().bits() as u8)
+            Ok(rxdata.data().bits())
         }
     }
 }
