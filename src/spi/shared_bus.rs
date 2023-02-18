@@ -6,7 +6,7 @@ use riscv::interrupt::Mutex;
 
 use super::{PinCS, PinsNoCS, SpiBus, SpiConfig, SpiSharedDevice, SpiX};
 
-/// Newtype for RefCell<Spi> locked behind a Mutex.
+/// Newtype for `RefCell<Spi>` locked behind a Mutex.
 /// Used to hold the [SpiBus] instance so it can be used for multiple [SpiSharedDevice] instances.
 pub struct SharedBus<SPI, PINS>(Mutex<RefCell<SpiBus<SPI, PINS>>>);
 
