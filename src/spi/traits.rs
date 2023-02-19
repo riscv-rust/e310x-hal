@@ -42,75 +42,75 @@ mod spi1_impl {
     use crate::gpio::gpio0;
     use crate::gpio::{NoInvert, IOF0};
 
-    type MOSI = gpio0::Pin3<IOF0<NoInvert>>;
-    type MISO = gpio0::Pin4<IOF0<NoInvert>>;
-    type SCK = gpio0::Pin5<IOF0<NoInvert>>;
-    type CS0 = gpio0::Pin2<IOF0<NoInvert>>;
-    type CS1 = gpio0::Pin8<IOF0<NoInvert>>;
-    type CS2 = gpio0::Pin9<IOF0<NoInvert>>;
-    type CS3 = gpio0::Pin10<IOF0<NoInvert>>;
+    type Mosi = gpio0::Pin3<IOF0<NoInvert>>;
+    type Miso = gpio0::Pin4<IOF0<NoInvert>>;
+    type Sck = gpio0::Pin5<IOF0<NoInvert>>;
+    type Cs0 = gpio0::Pin2<IOF0<NoInvert>>;
+    type Cs1 = gpio0::Pin8<IOF0<NoInvert>>;
+    type Cs2 = gpio0::Pin9<IOF0<NoInvert>>;
+    type Cs3 = gpio0::Pin10<IOF0<NoInvert>>;
 
     // ensure only the correct CS pins can be used to make SpiSharedDevice instances
-    impl PinCS<QSPI1> for CS0 {
+    impl PinCS<QSPI1> for Cs0 {
         const CS_INDEX: u32 = 0;
     }
-    impl PinCS<QSPI1> for CS1 {
+    impl PinCS<QSPI1> for Cs1 {
         const CS_INDEX: u32 = 1;
     }
-    impl PinCS<QSPI1> for CS2 {
+    impl PinCS<QSPI1> for Cs2 {
         const CS_INDEX: u32 = 2;
     }
-    impl PinCS<QSPI1> for CS3 {
+    impl PinCS<QSPI1> for Cs3 {
         const CS_INDEX: u32 = 3;
     }
 
-    impl PinsNoCS<QSPI1> for (MOSI, MISO, SCK) {}
-    impl PinsNoCS<QSPI1> for (MOSI, (), SCK) {}
-    impl PinsNoCS<QSPI1> for ((), MISO, SCK) {}
+    impl PinsNoCS<QSPI1> for (Mosi, Miso, Sck) {}
+    impl PinsNoCS<QSPI1> for (Mosi, (), Sck) {}
+    impl PinsNoCS<QSPI1> for ((), Miso, Sck) {}
 
-    impl Pins<QSPI1> for (MOSI, MISO, SCK) {
+    impl Pins<QSPI1> for (Mosi, Miso, Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI1> for (MOSI, (), SCK) {
+    impl Pins<QSPI1> for (Mosi, (), Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI1> for ((), MISO, SCK) {
+    impl Pins<QSPI1> for ((), Miso, Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI1> for (MOSI, MISO, SCK, CS0) {
+    impl Pins<QSPI1> for (Mosi, Miso, Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
-    impl Pins<QSPI1> for (MOSI, (), SCK, CS0) {
+    impl Pins<QSPI1> for (Mosi, (), Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
-    impl Pins<QSPI1> for ((), MISO, SCK, CS0) {
+    impl Pins<QSPI1> for ((), Miso, Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
-    impl Pins<QSPI1> for (MOSI, MISO, SCK, CS1) {
+    impl Pins<QSPI1> for (Mosi, Miso, Sck, Cs1) {
         const CS_INDEX: Option<u32> = Some(1);
     }
-    impl Pins<QSPI1> for (MOSI, (), SCK, CS1) {
+    impl Pins<QSPI1> for (Mosi, (), Sck, Cs1) {
         const CS_INDEX: Option<u32> = Some(1);
     }
-    impl Pins<QSPI1> for ((), MISO, SCK, CS1) {
+    impl Pins<QSPI1> for ((), Miso, Sck, Cs1) {
         const CS_INDEX: Option<u32> = Some(1);
     }
-    impl Pins<QSPI1> for (MOSI, MISO, SCK, CS2) {
+    impl Pins<QSPI1> for (Mosi, Miso, Sck, Cs2) {
         const CS_INDEX: Option<u32> = Some(2);
     }
-    impl Pins<QSPI1> for (MOSI, (), SCK, CS2) {
+    impl Pins<QSPI1> for (Mosi, (), Sck, Cs2) {
         const CS_INDEX: Option<u32> = Some(2);
     }
-    impl Pins<QSPI1> for ((), MISO, SCK, CS2) {
+    impl Pins<QSPI1> for ((), Miso, Sck, Cs2) {
         const CS_INDEX: Option<u32> = Some(2);
     }
-    impl Pins<QSPI1> for (MOSI, MISO, SCK, CS3) {
+    impl Pins<QSPI1> for (Mosi, Miso, Sck, Cs3) {
         const CS_INDEX: Option<u32> = Some(3);
     }
-    impl Pins<QSPI1> for (MOSI, (), SCK, CS3) {
+    impl Pins<QSPI1> for (Mosi, (), Sck, Cs3) {
         const CS_INDEX: Option<u32> = Some(3);
     }
-    impl Pins<QSPI1> for ((), MISO, SCK, CS3) {
+    impl Pins<QSPI1> for ((), Miso, Sck, Cs3) {
         const CS_INDEX: Option<u32> = Some(3);
     }
 
@@ -119,25 +119,25 @@ mod spi1_impl {
         use super::super::private::Sealed;
         use super::*;
 
-        impl Sealed for CS0 {}
-        impl Sealed for CS1 {}
-        impl Sealed for CS2 {}
-        impl Sealed for CS3 {}
-        impl Sealed for (MOSI, MISO, SCK) {}
-        impl Sealed for (MOSI, (), SCK) {}
-        impl Sealed for ((), MISO, SCK) {}
-        impl Sealed for (MOSI, MISO, SCK, CS0) {}
-        impl Sealed for (MOSI, (), SCK, CS0) {}
-        impl Sealed for ((), MISO, SCK, CS0) {}
-        impl Sealed for (MOSI, MISO, SCK, CS1) {}
-        impl Sealed for (MOSI, (), SCK, CS1) {}
-        impl Sealed for ((), MISO, SCK, CS1) {}
-        impl Sealed for (MOSI, MISO, SCK, CS2) {}
-        impl Sealed for (MOSI, (), SCK, CS2) {}
-        impl Sealed for ((), MISO, SCK, CS2) {}
-        impl Sealed for (MOSI, MISO, SCK, CS3) {}
-        impl Sealed for (MOSI, (), SCK, CS3) {}
-        impl Sealed for ((), MISO, SCK, CS3) {}
+        impl Sealed for Cs0 {}
+        impl Sealed for Cs1 {}
+        impl Sealed for Cs2 {}
+        impl Sealed for Cs3 {}
+        impl Sealed for (Mosi, Miso, Sck) {}
+        impl Sealed for (Mosi, (), Sck) {}
+        impl Sealed for ((), Miso, Sck) {}
+        impl Sealed for (Mosi, Miso, Sck, Cs0) {}
+        impl Sealed for (Mosi, (), Sck, Cs0) {}
+        impl Sealed for ((), Miso, Sck, Cs0) {}
+        impl Sealed for (Mosi, Miso, Sck, Cs1) {}
+        impl Sealed for (Mosi, (), Sck, Cs1) {}
+        impl Sealed for ((), Miso, Sck, Cs1) {}
+        impl Sealed for (Mosi, Miso, Sck, Cs2) {}
+        impl Sealed for (Mosi, (), Sck, Cs2) {}
+        impl Sealed for ((), Miso, Sck, Cs2) {}
+        impl Sealed for (Mosi, Miso, Sck, Cs3) {}
+        impl Sealed for (Mosi, (), Sck, Cs3) {}
+        impl Sealed for ((), Miso, Sck, Cs3) {}
     }
 }
 
@@ -147,35 +147,35 @@ mod spi2_impl {
     use crate::gpio::gpio0;
     use crate::gpio::{NoInvert, IOF0};
 
-    type MOSI = gpio0::Pin27<IOF0<NoInvert>>;
-    type MISO = gpio0::Pin28<IOF0<NoInvert>>;
-    type SCK = gpio0::Pin29<IOF0<NoInvert>>;
-    type CS0 = gpio0::Pin26<IOF0<NoInvert>>;
+    type Mosi = gpio0::Pin27<IOF0<NoInvert>>;
+    type Miso = gpio0::Pin28<IOF0<NoInvert>>;
+    type Sck = gpio0::Pin29<IOF0<NoInvert>>;
+    type Cs0 = gpio0::Pin26<IOF0<NoInvert>>;
 
-    impl PinCS<QSPI2> for CS0 {
+    impl PinCS<QSPI2> for Cs0 {
         const CS_INDEX: u32 = 0;
     }
 
-    impl PinsNoCS<QSPI2> for (MOSI, MISO, SCK) {}
-    impl PinsNoCS<QSPI2> for (MOSI, (), SCK) {}
-    impl PinsNoCS<QSPI2> for ((), MISO, SCK) {}
+    impl PinsNoCS<QSPI2> for (Mosi, Miso, Sck) {}
+    impl PinsNoCS<QSPI2> for (Mosi, (), Sck) {}
+    impl PinsNoCS<QSPI2> for ((), Miso, Sck) {}
 
-    impl Pins<QSPI2> for (MOSI, MISO, SCK) {
+    impl Pins<QSPI2> for (Mosi, Miso, Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI2> for (MOSI, (), SCK) {
+    impl Pins<QSPI2> for (Mosi, (), Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI2> for ((), MISO, SCK) {
+    impl Pins<QSPI2> for ((), Miso, Sck) {
         const CS_INDEX: Option<u32> = None;
     }
-    impl Pins<QSPI2> for (MOSI, MISO, SCK, CS0) {
+    impl Pins<QSPI2> for (Mosi, Miso, Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
-    impl Pins<QSPI2> for (MOSI, (), SCK, CS0) {
+    impl Pins<QSPI2> for (Mosi, (), Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
-    impl Pins<QSPI2> for ((), MISO, SCK, CS0) {
+    impl Pins<QSPI2> for ((), Miso, Sck, Cs0) {
         const CS_INDEX: Option<u32> = Some(0);
     }
 
@@ -184,13 +184,13 @@ mod spi2_impl {
         use super::super::private::Sealed;
         use super::*;
 
-        impl Sealed for CS0 {}
-        impl Sealed for (MOSI, MISO, SCK) {}
-        impl Sealed for (MOSI, (), SCK) {}
-        impl Sealed for ((), MISO, SCK) {}
-        impl Sealed for (MOSI, MISO, SCK, CS0) {}
-        impl Sealed for (MOSI, (), SCK, CS0) {}
-        impl Sealed for ((), MISO, SCK, CS0) {}
+        impl Sealed for Cs0 {}
+        impl Sealed for (Mosi, Miso, Sck) {}
+        impl Sealed for (Mosi, (), Sck) {}
+        impl Sealed for ((), Miso, Sck) {}
+        impl Sealed for (Mosi, Miso, Sck, Cs0) {}
+        impl Sealed for (Mosi, (), Sck, Cs0) {}
+        impl Sealed for ((), Miso, Sck, Cs0) {}
     }
 }
 
