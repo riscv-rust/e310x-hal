@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added Pulse Width Modulation interface implementing `embedded_hal::Pwm`
 - Added `interrupt` module for vectored interrupt handlers.
 This module is only active if feature `virq` is selected.
+- Adapted to Clippy directives
 
 ## [v0.9.4] - 2022-07-10
 
