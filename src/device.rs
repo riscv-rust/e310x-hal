@@ -173,10 +173,7 @@ impl DeviceResources {
     }
 
     /// Unchecked version of `DeviceResources::take`
-    ///
-    /// # Safety
-    ///
-    /// To do.
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn steal() -> Self {
         e310x::Peripherals::steal().into()
     }
