@@ -13,8 +13,8 @@
 //!
 //! - A vectored implementation for handling each machine external interrupt source independently.
 //!
-//! - A linker script that provides weak symbols for all the interrupt sources of an E310X microcontroller.
-//!   This file must be supplied using rustflag when compiling.
+//! - fe310x-interrupt.x, a linker script that provides weak symbols for all the interrupt sources
+//! of an FE310X microcontroller. This file must be supplied using rustflag when compiling.
 //!
 //! # Implementation details
 //!
