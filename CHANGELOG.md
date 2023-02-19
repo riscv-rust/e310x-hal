@@ -9,8 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Refactored `e310x-hal::spi` module, splitting the abstraction into `SpiBus` and `SpiExclusiveDevice/SpiSharedDevice` to allow multiple devices on a single SPI bus to co-exist
 - Added Pulse Width Modulation interface implementing `embedded_hal::Pwm`
-- Added `interrupt` module for vectored interrupt handlers.
-This module is only active if feature `virq` is selected.
+- Added `interrupt` module for vectored interrupt handlers. The feature `virq` activates this module.
 - Adapted to Clippy directives
 
 ## [v0.9.4] - 2022-07-10
