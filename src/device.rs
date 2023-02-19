@@ -173,6 +173,10 @@ impl DeviceResources {
     }
 
     /// Unchecked version of `DeviceResources::take`
+    ///
+    /// # Safety
+    ///
+    /// To do.
     pub unsafe fn steal() -> Self {
         e310x::Peripherals::steal().into()
     }

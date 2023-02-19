@@ -28,9 +28,11 @@ use e310x::{uart0, UART0, UART1};
 
 // FIXME these should be "closed" traits
 /// TX pin - DO NOT IMPLEMENT THIS TRAIT
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait TxPin<UART> {}
 
 /// RX pin - DO NOT IMPLEMENT THIS TRAIT
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait RxPin<UART> {}
 
 unsafe impl<T> TxPin<UART0> for gpio0::Pin17<IOF0<T>> {}

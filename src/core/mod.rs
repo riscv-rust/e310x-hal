@@ -25,7 +25,11 @@ impl CorePeripherals {
         }
     }
 
-    /// Steal the peripherals
+    /// Steal the peripherals.
+    ///
+    /// # Safety
+    ///
+    /// To do.
     pub unsafe fn steal() -> Self {
         let p = e310x::Peripherals::steal();
         Self::new(p.CLINT, p.PLIC)

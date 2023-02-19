@@ -19,8 +19,10 @@ use e310x::{i2c0, I2C0};
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
 /// SDA pin - DO NOT IMPLEMENT THIS TRAIT
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait SdaPin<I2C> {}
 /// SCL pin - DO NOT IMPLEMENT THIS TRAIT
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait SclPin<I2C> {}
 
 unsafe impl<T> SdaPin<I2C0> for gpio0::Pin12<IOF0<T>> {}

@@ -130,7 +130,7 @@ pub trait PMUExt {
     ///
     /// Stores user data `UD` to backup registers.
     ///
-    /// # *WARNING*
+    /// # Safety
     ///
     /// `user_data` value must not contain un-serializable types such as pointers or references.
     ///
@@ -158,7 +158,7 @@ pub trait PMUExt {
     ///
     /// Restores user data `UD` from backup registers.
     ///
-    /// # *WARNING*
+    /// # Safety
     ///
     /// `user_data` value must not contain un-serializable types such as pointers or references.
     ///
