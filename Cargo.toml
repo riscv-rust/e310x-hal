@@ -7,8 +7,8 @@ categories = ["embedded", "hardware-support", "no-std"]
 description = "HAL for the E310x family of microcontrollers."
 keywords = ["riscv", "e310", "hal"]
 license = "ISC"
-edition = "2018"
-rust-version = "1.59"
+edition = "2021"
+rust-version = "1.72"
 
 [dependencies]
 embedded-hal = { version = "0.2.6", features = ["unproven"] }
@@ -17,7 +17,7 @@ riscv = { version = "0.10.1", features = ["critical-section-single-hart"] }
 e310x = { version = "0.11.0", features = ["rt", "critical-section"] }
 
 [target.'cfg(not(target_has_atomic = "32"))'.dependencies]
-portable-atomic = { version = "1.4", default-features = false, features = ["unsafe-assume-single-core"] }
+portable-atomic = { version = "1.5", default-features = false, features = ["unsafe-assume-single-core", "force-amo"] }
 
 [features]
 g002 = ["e310x/g002"]

@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-- Use `portable-atomic` to allow builds on `riscv32imc-unknown-none-elf`` targets when needed.
+### Changed
+- Use `portable-atomic` to allow builds on `riscv32imc-unknown-none-elf` targets when needed.
+- Use `force-amo` on `portable-atomic` to use AMO instructions even when compiling for `riscv32imc-unknown-none-elf`.
+- Bump MSRV to 1.72 due to `force-amo` on `portable-atomic`.
 
 ## [v0.10.0] - 2023-03-28
 
