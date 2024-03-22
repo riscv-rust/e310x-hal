@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 use core::ops::Deref;
-pub use embedded_hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
+// pub use embedded_hal_0::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 use riscv::interrupt;
 
 use super::{PinCS, PinsNoCS, SpiBus, SpiConfig, SpiSharedDevice, SpiX};

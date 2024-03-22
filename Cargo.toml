@@ -11,7 +11,8 @@ edition = "2018"
 rust-version = "1.59"
 
 [dependencies]
-embedded-hal = { version = "0.2.6", features = ["unproven"] }
+embedded-hal-0 = { package = "embedded-hal", version = "0.2.7", features = ["unproven"] }
+embedded-hal-1 = { package = "embedded-hal", version = "1.0.0" }
 nb = "1.0.0"
 riscv = { version = "0.10.1", features = ["critical-section-single-hart"] }
 e310x = { version = "0.11.0", features = ["rt", "critical-section"] }

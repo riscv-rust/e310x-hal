@@ -16,7 +16,7 @@
 use core::convert::Infallible;
 use core::ops::Deref;
 
-use embedded_hal::serial;
+use embedded_hal_0::serial;
 use nb;
 
 use crate::clock::Clocks;

@@ -16,7 +16,7 @@ use crate::time::Bps;
 use core::mem;
 use core::ops::Deref;
 use e310x::{i2c0, I2C0};
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+use embedded_hal_0::blocking::i2c::{Read, Write, WriteRead};
 
 /// SDA pin - DO NOT IMPLEMENT THIS TRAIT
 pub unsafe trait SdaPin<I2C> {}

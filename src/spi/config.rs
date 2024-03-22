@@ -1,5 +1,5 @@
 use e310x::qspi0::csmode::MODE_A;
-use embedded_hal::spi::Mode;
+use embedded_hal_0::spi::Mode;
 
 use crate::{clock::Clocks, time::Hertz};
 

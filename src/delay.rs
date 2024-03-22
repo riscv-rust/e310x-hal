@@ -2,7 +2,7 @@
 
 use crate::clock::Clocks;
 use crate::core::clint::{MTIME, MTIMECMP};
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
+use embedded_hal_0::blocking::delay::{DelayMs, DelayUs};
 use riscv::register::{mie, mip};
 
 /// Machine timer (mtime) as a busyloop delay provider
