@@ -175,7 +175,7 @@ impl<PWM: PwmX> Pwm<PWM> {
     }
 }
 
-impl<PWM: PwmX> embedded_hal::Pwm for Pwm<PWM> {
+impl<PWM: PwmX> embedded_hal_0::Pwm for Pwm<PWM> {
     type Channel = Channel<PWM>;
 
     type Time = PWM::CmpWidth;

@@ -1,6 +1,6 @@
 use core::convert::Infallible;
 
-use embedded_hal::{
+use embedded_hal_0::{
     blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter},
     spi::FullDuplex,
 };

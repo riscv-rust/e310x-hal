@@ -146,7 +146,7 @@ macro_rules! gpio {
             use core::marker::PhantomData;
             use core::convert::Infallible;
 
-            use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin,
+            use embedded_hal_0::digital::v2::{InputPin, OutputPin, StatefulOutputPin,
                                ToggleableOutputPin};
             use e310x::$GPIOX;
             use super::{Unknown, IOF0, IOF1, Drive, Floating, GpioExt, Input, Invert,

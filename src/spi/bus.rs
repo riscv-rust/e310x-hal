@@ -1,7 +1,7 @@
 use core::convert::Infallible;
-use embedded_hal::blocking::spi::Operation;
-pub use embedded_hal::blocking::spi::{Transfer, Write, WriteIter};
-pub use embedded_hal::spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
+use embedded_hal_0::blocking::spi::Operation;
+pub use embedded_hal_0::blocking::spi::{Transfer, Write, WriteIter};
+pub use embedded_hal_0::spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 use nb;
 
